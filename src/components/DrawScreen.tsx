@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { ArrowLeft, RotateCcw, Play, History as HistoryIcon, X } from "lucide-react";
+import React, { useState } from "react";
+import { ArrowLeft, RotateCcw, Play, History as HistoryIcon, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { numberToJapanese, cn } from "@/lib/utils";
+import { ASSETS } from "@/lib/assets";
 
 interface DrawScreenProps {
   min: number;
@@ -13,152 +14,253 @@ interface DrawScreenProps {
   onReset: () => void;
 }
 
+const ITEM_HEIGHT = 120; // Fixed height per reel item
+
+// Dynamic text size based on text length
+const getSlotTextClass = (text: string) => {
+  const len = text.length;
+  if (len <= 2) return "text-7xl md:text-[9rem]";
+  if (len <= 3) return "text-6xl md:text-8xl";
+  if (len <= 5) return "text-5xl md:text-7xl";
+  if (len <= 7) return "text-4xl md:text-6xl";
+  return "text-3xl md:text-5xl";
+};
+
 const DrawScreen: React.FC<DrawScreenProps> = ({ min, max, mode, onBack, onReset }) => {
   const [result, setResult] = useState<number | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [history, setHistory] = useState<number[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [displayValue, setDisplayValue] = useState<string>("?");
+  const [reel, setReel] = useState<string[]>([]);
+  const [maxTextLen, setMaxTextLen] = useState(1);
 
   const startDraw = () => {
     if (isDrawing) return;
+    
+    // Choose final result first
+    const finalNum = Math.floor(Math.random() * (max - min + 1)) + min;
+    
+    // Create reel of random selections before stopping on the final result
+    const newReel: string[] = [];
+    for (let i = 0; i < 20; i++) {
+        const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
+        newReel.push(mode === "japanese" ? numberToJapanese(randomNum) : randomNum.toString());
+    }
+    const finalText = mode === "japanese" ? numberToJapanese(finalNum) : finalNum.toString();
+    newReel.push(finalText);
+
+    // Track the longest text in the reel for consistent sizing
+    const longest = newReel.reduce((max, s) => Math.max(max, s.length), 0);
+    setMaxTextLen(longest);
+
+    setReel(newReel);
     setIsDrawing(true);
+    setResult(null);
     setShowHistory(false);
 
-    let count = 0;
-    const duration = 2000;
-    const interval = 80;
-    const totalSteps = duration / interval;
-
-    const timer = setInterval(() => {
-      const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
-      setDisplayValue(mode === "japanese" ? numberToJapanese(randomNum) : randomNum.toString());
-      count++;
-
-      if (count >= totalSteps) {
-        clearInterval(timer);
-        const finalNum = Math.floor(Math.random() * (max - min + 1)) + min;
+    // After reel finishes spinning
+    setTimeout(() => {
         setResult(finalNum);
-        setDisplayValue(mode === "japanese" ? numberToJapanese(finalNum) : finalNum.toString());
-        setHistory((prev) => [finalNum, ...prev.slice(0, 9)]);
         setIsDrawing(false);
-      }
-    }, interval);
+        setHistory((prev) => [finalNum, ...prev.slice(0, 9)]);
+    }, 2400);
   };
 
+  // Get the display text for the result
+  const resultText = result !== null ? (mode === "japanese" ? numberToJapanese(result) : result.toString()) : "?";
+
   return (
-    <div className="relative flex flex-col items-center justify-center min-vh-100 w-full p-6 overflow-hidden">
-      {/* Background Image with Blur Overlay */}
+    <div className="relative flex flex-col items-center justify-center min-h-screen w-full p-6 overflow-hidden">
+      {/* Background with Asset & Modern Overlays */}
       <div 
-        className="absolute inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: `url('https://media.istockphoto.com/id/1129069115/ko/%EC%82%AC%EC%A7%84/%EB%82%AE%EC%97%90-%EC%9D%BC%EB%B3%B8-%ED%92%8D%EA%B2%BD.jpg?s=1024x1024&w=is&k=20&c=Dg_F8NtqdCtuUer3T4lJO5LUCd7YemDcfJZ-joP2g0M=')` }}
+        className="absolute inset-0 bg-cover bg-center z-0 scale-105"
+        style={{ backgroundImage: `url('${ASSETS.BACKGROUND}')` }}
       >
-        <div className="absolute inset-0 bg-[#1a1a2e]/80 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px]" />
       </div>
 
-      <div className="relative z-10 w-full max-w-lg flex flex-col gap-8">
+      <div className="relative z-10 w-full max-w-2xl flex flex-col gap-8">
         {/* Header Controls */}
         <div className="flex items-center justify-between">
-          <button
+          <motion.button
+            whileHover={{ x: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white/60 hover:text-white transition-all text-sm font-medium"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/10 border border-white/10 rounded-2xl text-white/50 hover:text-white transition-all text-[11px] font-black uppercase tracking-widest"
           >
             <ArrowLeft className="w-4 h-4" />
-            뒤로
-          </button>
+            Back
+          </motion.button>
           
-          <div className="bg-white/5 border border-white/10 px-4 py-1.5 rounded-full text-xs font-semibold text-white/50 space-x-2">
-            <span>범위:</span>
-            <span className="text-white">{min} ~ {max}</span>
+          <div className="flex flex-col items-center">
+            <h2 className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Range Settings</h2>
+            <div className="bg-orange-500/10 border border-orange-500/20 px-6 py-1.5 rounded-full text-sm font-black text-orange-400">
+              {min} <span className="mx-2 text-white/20">~</span> {max}
+            </div>
           </div>
 
-          <button
+          <motion.button
+            whileHover={{ rotate: 180 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onReset}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white/60 hover:text-white transition-all text-sm font-medium"
+            className="p-3 bg-white/10 hover:bg-white/10 border border-white/10 rounded-2xl text-white/50 hover:text-white transition-all"
           >
-            <RotateCcw className="w-4 h-4" />
-            초기화
-          </button>
+            <RotateCcw className="w-5 h-5" />
+          </motion.button>
         </div>
 
-        {/* Main Result Area */}
-        <motion.div
-          layout
-          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-12 shadow-2xl flex flex-col items-center justify-center min-h-[320px] relative overflow-hidden"
-        >
-          <p className="text-white/40 text-xs font-bold uppercase tracking-[0.2em] mb-4">
-            {mode === "japanese" ? "日本語モード" : "Number Mode"}
+        {/* Main Draw Area */}
+        <div className="glass-card min-h-[400px] flex flex-col items-center justify-center relative overflow-hidden group shadow-[0_40px_100px_rgba(0,0,0,0.6)]">
+          {/* Decorative Corner Characters */}
+          <div className="absolute top-6 left-8 text-white/10 font-black text-6xl select-none uppercase tracking-tighter mix-blend-screen pointer-events-none">
+            {mode === "japanese" ? "壱" : "0"}
+          </div>
+          <div className="absolute bottom-6 right-8 text-white/10 font-black text-6xl select-none uppercase tracking-tighter mix-blend-screen pointer-events-none">
+            {mode === "japanese" ? "九" : "9"}
+          </div>
+
+          <p className="text-white/30 text-[11px] font-black uppercase tracking-[0.4em] mb-12 z-10">
+            {mode === "japanese" ? "日本語 モード" : "Numeric Draw"}
           </p>
           
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={displayValue}
-              initial={{ y: isDrawing ? 20 : 0, opacity: isDrawing ? 0 : 1 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: isDrawing ? -20 : 0, opacity: isDrawing ? 0 : 1 }}
-              transition={{ duration: 0.1 }}
-              className={cn(
-                "text-7xl md:text-8xl font-black text-white text-center selection:bg-orange-500",
-                isDrawing && "animate-pulse color-orange-400"
+          {/* Slot Viewport - uses relative+absolute to correctly position reel */}
+          <div className="relative w-full z-10 px-6 overflow-hidden" style={{ height: `${ITEM_HEIGHT}px` }}>
+            <AnimatePresence mode="wait">
+              {isDrawing ? (
+                <motion.div
+                  key="spinning-reel"
+                  className="absolute top-0 left-0 right-0 flex flex-col items-center"
+                  initial={{ y: 0 }}
+                  animate={{ y: -(reel.length - 1) * ITEM_HEIGHT }} 
+                  transition={{ 
+                    duration: 2.2, 
+                    ease: [0.45, 0.05, 0.55, 0.95],
+                  }}
+                >
+                  {reel.map((item, idx) => (
+                    <div 
+                      key={`${item}-${idx}`} 
+                      className={cn(
+                        "flex-shrink-0 flex items-center justify-center font-black text-center tracking-tighter whitespace-nowrap w-full",
+                        getSlotTextClass(item),
+                        idx === reel.length - 1 ? "text-white" : "text-white/10 blur-[2px]"
+                      )}
+                      style={{ height: `${ITEM_HEIGHT}px` }}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={result === null ? "initial" : "result"}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={cn(
+                    "absolute inset-0 flex items-center justify-center text-white font-black tracking-tighter text-center",
+                    getSlotTextClass(resultText)
+                  )}
+                >
+                  {resultText}
+                </motion.div>
               )}
-            >
-              {displayValue}
-            </motion.div>
-          </AnimatePresence>
+            </AnimatePresence>
+            
+            {/* Slot Mask Gradient */}
+            {isDrawing && (
+              <>
+                <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-[#1a1a2e] to-transparent z-20 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#1a1a2e] to-transparent z-20 pointer-events-none" />
+              </>
+            )}
+          </div>
 
-          {/* Particle Effects (Mockup for high-end feel) */}
-          <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-orange-500/10 to-transparent opacity-30" />
-        </motion.div>
+          {/* Reveal Feedback */}
+          {!isDrawing && result !== null && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0, rotate: 45 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"
+            >
+              <div className="w-[300px] h-[300px] bg-orange-500/20 blur-[100px] rounded-full" />
+            </motion.div>
+          )}
+        </div>
 
         {/* Action Button */}
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02, translateY: -2 }}
+          whileTap={{ scale: 0.98 }}
           onClick={startDraw}
           disabled={isDrawing}
-          className="group relative w-full bg-orange-500 hover:bg-orange-600 disabled:bg-white/5 disabled:text-white/20 p-6 rounded-[2rem] font-bold text-xl text-white flex items-center justify-center gap-3 transition-all transform active:scale-[0.98] shadow-2xl shadow-orange-500/20"
+          className="group relative w-full overflow-hidden p-[2px] rounded-[2.5rem] disabled:opacity-50 disabled:grayscale transition-all shadow-[0_20px_40px_-10px_rgba(249,115,22,0.3)]"
         >
-          {isDrawing ? (
-            <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-          ) : (
-            <Play className="w-6 h-6 fill-current" />
-          )}
-          <span>{isDrawing ? "추첨 중..." : (mode === "japanese" ? "番号を引く" : "번호 뽑기")}</span>
-        </button>
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-orange-400 to-white animate-gradient-x" />
+          <div className="relative bg-[#0a0a0c] hover:bg-orange-500/10 transition-all rounded-[2.4rem] py-6 flex items-center justify-center gap-4">
+            {isDrawing ? (
+              <div className="w-6 h-6 border-[4px] border-white/20 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Play className="w-6 h-6 fill-current text-orange-500 group-hover:text-white transition-colors" />
+            )}
+            <span className={cn(
+              "text-xl font-black uppercase tracking-widest transition-colors",
+              isDrawing ? "text-white/40" : "text-white group-hover:text-white"
+            )}>
+              {isDrawing ? "DRAWING..." : (mode === "japanese" ? "番号を引く" : "DRAW RESULT")}
+            </span>
+          </div>
+        </motion.button>
 
-        {/* History Toggle */}
+        {/* History Log Area */}
         {history.length > 0 && (
-          <div className="mt-4 flex flex-col items-center">
+          <div className="flex flex-col items-center">
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="flex items-center gap-2 text-white/40 hover:text-white/80 transition-colors text-sm font-medium"
+              className={cn(
+                "flex items-center gap-2 px-6 py-2 rounded-full border transition-all text-[11px] font-black uppercase tracking-widest",
+                showHistory 
+                    ? "bg-white text-black border-white" 
+                    : "bg-white/10 text-white/30 border-white/10 hover:text-white hover:bg-white/10"
+              )}
             >
               <HistoryIcon className="w-4 h-4" />
-              {showHistory ? "기록 숨기기" : `기록 보기 (${history.length})`}
+              Draw History ({history.length})
             </button>
 
             <AnimatePresence>
               {showHistory && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: 10, height: 0 }}
-                  className="w-full mt-6 bg-white/5 border border-white/10 rounded-2xl p-6 overflow-hidden"
+                  initial={{ opacity: 0, height: 0, y: 10 }}
+                  animate={{ opacity: 1, height: "auto", y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: 10 }}
+                  className="w-full mt-6 glass rounded-[2.5rem] p-8 border border-white/10"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-white/60 text-xs font-bold uppercase tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">최근 추첨 기록</h3>
-                    <button onClick={() => setHistory([])} className="text-xs text-white/20 hover:text-red-400">Clear</button>
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-white/20 text-xs font-black uppercase tracking-[0.2em] ml-1">Drawing Logs</h3>
+                    <button 
+                      onClick={() => setHistory([])} 
+                      className="text-[9px] font-black uppercase tracking-widest text-red-500/50 hover:text-red-500 px-3 py-1 rounded-lg border border-transparent hover:border-red-500/20 transition-all"
+                    >
+                      Clear
+                    </button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                     {history.map((num, i) => (
                       <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
                         key={`${num}-${i}`}
                         className={cn(
-                          "px-4 py-2 rounded-xl text-sm font-bold transition-all",
-                          i === 0 ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20" : "bg-white/5 text-white/50 border border-white/10"
+                          "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all h-24",
+                          i === 0 
+                            ? "bg-orange-500 border-orange-400 text-white shadow-lg" 
+                            : "bg-white/10 text-white/40 border-white/10"
                         )}
                       >
-                        {mode === "japanese" ? numberToJapanese(num) : num}
+                        <span className="text-xl font-black">{mode === "japanese" ? numberToJapanese(num) : num}</span>
+                        {mode === "japanese" && (
+                          <span className="text-[10px] opacity-30 font-bold mt-1">{num}</span>
+                        )}
                       </motion.div>
                     ))}
                   </div>

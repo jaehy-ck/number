@@ -35,14 +35,22 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen font-sans selection:bg-orange-500/30">
+    <main className="min-h-screen font-sans selection:bg-orange-500/30 overflow-hidden bg-[#0a0a0c]">
+      {/* Global Background (Persistent across screens) */}
+      <div className="aurora-container pointer-events-none">
+        <div className="aurora-blob aurora-blob-1" />
+        <div className="aurora-blob aurora-blob-2" />
+        <div className="aurora-blob aurora-blob-3" />
+      </div>
+
       <AnimatePresence mode="wait">
         {currentScreen === "mode" && (
           <motion.div
             key="mode"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, filter: "blur(10px)", scale: 1.05 }}
+            animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
+            exit={{ opacity: 0, filter: "blur(10px)", scale: 0.95 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="w-full"
           >
             <ModeSelection onSelect={handleModeSelect} />
@@ -52,9 +60,10 @@ export default function Home() {
         {currentScreen === "range" && (
           <motion.div
             key="range"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: 40, filter: "blur(10px)" }}
+            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, x: -40, filter: "blur(10px)" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
             className="w-full"
           >
             <RangeInput onConfirm={handleRangeConfirm} onBack={handleBack} />
@@ -64,9 +73,10 @@ export default function Home() {
         {currentScreen === "draw" && (
           <motion.div
             key="draw"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
+            initial={{ opacity: 0, scale: 0.9, filter: "blur(20px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 1.1, filter: "blur(20px)" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="w-full"
           >
             <DrawScreen
