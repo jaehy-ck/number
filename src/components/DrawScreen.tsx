@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import { ArrowLeft, RotateCcw, Play, History as HistoryIcon, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { numberToJapanese, cn } from "@/lib/utils";
+import { numberToJapanese, cn, OMIKUJI_RESULTS } from "@/lib/utils";
 import { ASSETS } from "@/lib/assets";
 
 interface DrawScreenProps {
   min: number;
   max: number;
-  mode: "japanese" | "number";
+  mode: "japanese" | "number" | "omikuji";
   onBack: () => void;
   onReset: () => void;
 }
@@ -27,9 +27,9 @@ const getSlotTextClass = (text: string) => {
 };
 
 const DrawScreen: React.FC<DrawScreenProps> = ({ min, max, mode, onBack, onReset }) => {
-  const [result, setResult] = useState<number | null>(null);
+  const [result, setResult] = useState<number | string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [history, setHistory] = useState<number[]>([]);
+  const [history, setHistory] = useState<(number | string)[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [reel, setReel] = useState<string[]>([]);
   const [maxTextLen, setMaxTextLen] = useState(1);
@@ -38,15 +38,24 @@ const DrawScreen: React.FC<DrawScreenProps> = ({ min, max, mode, onBack, onReset
     if (isDrawing) return;
     
     // Choose final result first
-    const finalNum = Math.floor(Math.random() * (max - min + 1)) + min;
+    let finalVal: string | number;
+    if (mode === "omikuji") {
+      finalVal = OMIKUJI_RESULTS[Math.floor(Math.random() * OMIKUJI_RESULTS.length)];
+    } else {
+      finalVal = Math.floor(Math.random() * (max - min + 1)) + min;
+    }
     
     // Create reel of random selections before stopping on the final result
     const newReel: string[] = [];
     for (let i = 0; i < 20; i++) {
-        const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
-        newReel.push(mode === "japanese" ? numberToJapanese(randomNum) : randomNum.toString());
+        if (mode === "omikuji") {
+            newReel.push(OMIKUJI_RESULTS[Math.floor(Math.random() * OMIKUJI_RESULTS.length)]);
+        } else {
+            const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
+            newReel.push(mode === "japanese" ? numberToJapanese(randomNum) : randomNum.toString());
+        }
     }
-    const finalText = mode === "japanese" ? numberToJapanese(finalNum) : finalNum.toString();
+    const finalText = mode === "omikuji" ? finalVal as string : (mode === "japanese" ? numberToJapanese(finalVal as number) : finalVal.toString());
     newReel.push(finalText);
 
     // Track the longest text in the reel for consistent sizing
@@ -60,14 +69,14 @@ const DrawScreen: React.FC<DrawScreenProps> = ({ min, max, mode, onBack, onReset
 
     // After reel finishes spinning
     setTimeout(() => {
-        setResult(finalNum);
+        setResult(finalVal);
         setIsDrawing(false);
-        setHistory((prev) => [finalNum, ...prev.slice(0, 9)]);
+        setHistory((prev) => [finalVal, ...prev.slice(0, 9)]);
     }, 2400);
   };
 
   // Get the display text for the result
-  const resultText = result !== null ? (mode === "japanese" ? numberToJapanese(result) : result.toString()) : "?";
+  const resultText = result !== null ? (mode === "omikuji" ? result as string : (mode === "japanese" ? numberToJapanese(result as number) : result.toString())) : "?";
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen w-full p-6 overflow-hidden">
@@ -93,10 +102,16 @@ const DrawScreen: React.FC<DrawScreenProps> = ({ min, max, mode, onBack, onReset
           </motion.button>
           
           <div className="flex flex-col items-center">
-            <h2 className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Range Settings</h2>
-            <div className="bg-orange-500/10 border border-orange-500/20 px-6 py-1.5 rounded-full text-sm font-black text-orange-400">
-              {min} <span className="mx-2 text-white/20">~</span> {max}
-            </div>
+            {mode === "omikuji" ? (
+              <h2 className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Omikuji Mode</h2>
+            ) : (
+              <>
+                <h2 className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Range Settings</h2>
+                <div className="bg-orange-500/10 border border-orange-500/20 px-6 py-1.5 rounded-full text-sm font-black text-orange-400">
+                  {min} <span className="mx-2 text-white/20">~</span> {max}
+                </div>
+              </>
+            )}
           </div>
 
           <motion.button
@@ -113,14 +128,14 @@ const DrawScreen: React.FC<DrawScreenProps> = ({ min, max, mode, onBack, onReset
         <div className="glass-card min-h-[400px] flex flex-col items-center justify-center relative overflow-hidden group shadow-[0_40px_100px_rgba(0,0,0,0.6)]">
           {/* Decorative Corner Characters */}
           <div className="absolute top-6 left-8 text-white/10 font-black text-6xl select-none uppercase tracking-tighter mix-blend-screen pointer-events-none">
-            {mode === "japanese" ? "壱" : "0"}
+            {mode === "omikuji" ? "大" : (mode === "japanese" ? "壱" : "0")}
           </div>
           <div className="absolute bottom-6 right-8 text-white/10 font-black text-6xl select-none uppercase tracking-tighter mix-blend-screen pointer-events-none">
-            {mode === "japanese" ? "九" : "9"}
+            {mode === "omikuji" ? "吉" : (mode === "japanese" ? "九" : "9")}
           </div>
 
           <p className="text-white/30 text-[11px] font-black uppercase tracking-[0.4em] mb-12 z-10">
-            {mode === "japanese" ? "日本語 モード" : "Numeric Draw"}
+            {mode === "omikuji" ? "おみくじ" : (mode === "japanese" ? "日本語 モード" : "Numeric Draw")}
           </p>
           
           {/* Slot Viewport - uses relative+absolute to correctly position reel */}
@@ -206,7 +221,7 @@ const DrawScreen: React.FC<DrawScreenProps> = ({ min, max, mode, onBack, onReset
               "text-xl font-black uppercase tracking-widest transition-colors",
               isDrawing ? "text-white/40" : "text-white group-hover:text-white"
             )}>
-              {isDrawing ? "DRAWING..." : (mode === "japanese" ? "番号を引く" : "DRAW RESULT")}
+              {isDrawing ? "DRAWING..." : (mode === "omikuji" ? "おみくじを引く" : (mode === "japanese" ? "番号を引く" : "DRAW RESULT"))}
             </span>
           </div>
         </motion.button>
@@ -257,7 +272,7 @@ const DrawScreen: React.FC<DrawScreenProps> = ({ min, max, mode, onBack, onReset
                             : "bg-white/10 text-white/40 border-white/10"
                         )}
                       >
-                        <span className="text-xl font-black">{mode === "japanese" ? numberToJapanese(num) : num}</span>
+                        <span className="text-xl font-black">{mode === "omikuji" ? num : (mode === "japanese" ? numberToJapanese(num as number) : num)}</span>
                         {mode === "japanese" && (
                           <span className="text-[10px] opacity-30 font-bold mt-1">{num}</span>
                         )}

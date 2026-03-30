@@ -49,3 +49,7 @@ export function numberToJapanese(num: number): string {
 
   return result;
 }
+
+export const OMIKUJI_RESULTS = [
+  "大吉", "中吉", "小吉", "吉", "末吉", "凶", "大凶"
+];

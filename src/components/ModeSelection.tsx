@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { Languages, Hash, Sparkles } from "lucide-react";
+import { Languages, Hash, Sparkles, ScrollText } from "lucide-react";
 import { motion } from "framer-motion";
 import { ASSETS } from "@/lib/assets";
 
 interface ModeSelectionProps {
-  onSelect: (mode: "japanese" | "number") => void;
+  onSelect: (mode: "japanese" | "number" | "omikuji") => void;
 }
 
 const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelect }) => {
@@ -43,7 +43,7 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelect }) => {
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-xl px-6"
+        className="relative z-10 w-full max-w-4xl px-6"
       >
         <div className="glass-card p-10 md:p-14 overflow-hidden group">
           {/* Subtle Glow Header */}
@@ -67,7 +67,7 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelect }) => {
             </p>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <motion.button
               whileHover={{ scale: 1.02, translateY: -5 }}
               whileTap={{ scale: 0.98 }}
@@ -109,6 +109,28 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onSelect }) => {
               {/* Card Decoration */}
               <div className="absolute top-4 right-4 text-white/10 font-black text-4xl select-none group-hover:text-blue-500/10 transition-colors">
                 7
+              </div>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.02, translateY: -5 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onSelect("omikuji")}
+              className="group relative flex flex-col items-center gap-6 p-8 rounded-[2rem] bg-white/10 hover:bg-pink-500/10 border border-white/10 hover:border-pink-500/30 transition-all duration-300"
+            >
+              <div className="w-20 h-20 rounded-3xl bg-pink-500/10 flex items-center justify-center group-hover:bg-pink-600 group-hover:shadow-[0_0_30px_rgba(236,72,153,0.4)] transition-all duration-500 overflow-hidden">
+                <ScrollText className="w-10 h-10 text-pink-400 group-hover:text-white transition-colors" />
+              </div>
+              <div className="text-center">
+                <span className="block text-xl font-bold text-white mb-1">오미쿠지</span>
+                <span className="block text-[10px] text-white/30 group-hover:text-pink-400/80 font-bold uppercase tracking-widest transition-colors">
+                  Omikuji Mode
+                </span>
+              </div>
+
+              {/* Card Decoration */}
+              <div className="absolute top-4 right-4 text-white/10 font-black text-4xl select-none group-hover:text-pink-500/10 transition-colors">
+                吉
               </div>
             </motion.button>
           </div>
