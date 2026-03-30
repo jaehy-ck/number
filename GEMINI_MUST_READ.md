@@ -1,47 +1,59 @@
-# 프로젝트 안정화 가이드 (Number App)
+# 🚀 Number App 프로젝트 가이드
 
-## ⚠️ 이전 이슈 (해결됨)
-tailwindcss resolve 에러는 Turbopack이 workspace root를 잘못 감지하여 발생.
-`next.config.ts`에 `turbopack.root`를 명시 설정하여 해결.
+이 문서는 공동 작업자분들(특히 Git 입문자분!)을 위해 작성되었습니다. 협업 중 발생할 수 있는 '환경 꼬임'을 방지하고 즐겁게 0.1 프로젝트를 완성하기 위한 안내서입니다.
 
 ---
 
-## 공동작업 시 반드시 지킬 것
-
-### 1. 처음 클론 후 또는 pull 후
-```sh
-npm install
-npm run dev
-```
-
-### 2. 패키지 추가/제거 시
-```sh
-npm install <패키지명>   # 추가
-npm uninstall <패키지명>  # 제거
-# package.json과 package-lock.json 둘 다 커밋할 것!
-```
-
-### 3. tailwindcss 에러 발생 시 (비상)
-```sh
-rm -rf node_modules .next
-npm install
-npm run dev
-```
-
-### 4. Node 버전
-- `.nvmrc` 파일에 Node 22로 고정됨
-- `nvm use` 명령어로 맞출 수 있음
+## 🌟 이번 업데이트 내용
+현재 `fix/stabilization-refinement` 브랜치에 다음 내용이 올라와 있습니다.
+1.  **빌드 안정화**: Tailwind CSS와 Turbopack 충돌 해결
+2.  **프리미엄 기능**: 뽑기 기록 유지(새로고침해도 안 사라짐!), 결과 복사 버튼 추가
+3.  **Netlify 설정**: 배포 시 Node v22 환경 고정
 
 ---
 
-## Netlify 배포
-- `netlify.toml` 설정 포함됨
-- Node 22, `@netlify/plugin-nextjs` 사용
-- `npm run build` 명령어로 빌드
+## 🔰 Git 입문자를 위한 "안 꼬이는" 3단계
+
+### 1단계: 다른 사람이 만든 브랜치 가져오기
+제가 만든 수정 사항을 확인하려면 터미널에 다음을 입력하세요.
+```sh
+git fetch origin
+git checkout fix/stabilization-refinement
+```
+*   **fetch**: "서버에 새로운 소식(브랜치) 있니?" 하고 물어보는 것
+*   **checkout**: 해당 브랜치(방)로 이동하는 것
+
+### 2단계: 최신 상태로 유지하기
+작업을 시작하기 전에는 항상 이 명령어를 습관화해 주세요.
+```sh
+git pull origin main
+```
+*   **pull**: "다른 사람이 수정한 내용을 내 컴퓨터로 가져와서 합쳐줘!"
+
+### 3단계: 내 작업물 올리기
+1.  파일 수정 후 저장
+2.  `git add .` (수정한 파일들 장바구니에 담기)
+3.  `git commit -m "무엇을 수정했는지 설명"` (장바구니 결제 - 로컬 저장)
+4.  `git push origin 내브랜치이름` (서버로 전송!)
 
 ---
 
-## 금지 사항
-- ❌ `package.json`이나 `package-lock.json`을 `.gitignore`에 넣지 말 것
-- ❌ 홈 디렉토리(`~/`)에 `package.json`이나 `node_modules`를 만들지 말 것
-- ❌ `sudo npm install` 사용 금지 (캐시 권한 꼬임)
+## ⚠️ 절대 주의사항 (이것만 지켜도 안 터져요!)
+
+1.  **`package.json`은 보물지도**: 이 파일을 `.gitignore`에 넣거나 삭제하지 마세요! 팀원 모두가 같은 도구를 쓰게 해주는 지도입니다.
+2.  **`sudo` 금지**: `sudo npm install` 같은 명령어는 권한을 꼬이게 합니다. 그냥 `npm install`만 써주세요.
+3.  **에러 발생 시**: 만약 갑자기 화면이 안 나오거나 스타일이 깨지면 다음 '마법의 명령어'를 순서대로 입력하세요.
+    ```sh
+    rm -rf node_modules .next  # 예전 찌꺼기 삭제
+    npm install                # 도구 다시 설치
+    npm run dev                # 실행!
+    ```
+
+---
+
+## 🛠️ 개발 환경 설정
+- **Node.js 버전**: 22 (최신 LTS 추천)
+- **실행**: `npm run dev`
+- **빌드 테스트**: `npm run build`
+
+함께 멋진 앱을 만들어봐요! 질문이 있다면 언제든 물어봐 주세요. 😊
