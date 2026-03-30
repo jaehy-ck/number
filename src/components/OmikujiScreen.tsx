@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-import { ArrowLeft, RotateCcw, History as HistoryIcon, Play } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ArrowLeft, RotateCcw, History as HistoryIcon, Play, Copy, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn, safeStorage } from "@/lib/utils";
 import { ASSETS } from "@/lib/assets";
 
 interface OmikujiScreenProps {
@@ -16,10 +16,12 @@ interface OmikujiScreenProps {
 type DrawStep = "idle" | "shaking" | "dropping" | "revealing" | "done";
 
 const OmikujiScreen: React.FC<OmikujiScreenProps> = ({ min, max, onBack, onReset }) => {
+  const STORAGE_KEY = "omikuji_history";
   const [result, setResult] = useState<number | null>(null);
-  const [history, setHistory] = useState<number[]>([]);
+  const [history, setHistory] = useState<number[]>(() => safeStorage.get(STORAGE_KEY) || []);
   const [showHistory, setShowHistory] = useState(false);
   const [step, setStep] = useState<DrawStep>("idle");
+  const [copied, setCopied] = useState(false);
 
   const startDraw = () => {
     if (step !== "idle" && step !== "done") return;
@@ -42,8 +44,22 @@ const OmikujiScreen: React.FC<OmikujiScreenProps> = ({ min, max, onBack, onReset
     setTimeout(() => {
       setResult(finalVal);
       setStep("done");
-      setHistory((prev) => [finalVal, ...prev.slice(0, 9)]);
+      const newHistory = [finalVal, ...history.slice(0, 9)];
+      setHistory(newHistory);
+      safeStorage.set(STORAGE_KEY, newHistory);
     }, 2800); // Reveal paper fully 
+  };
+
+  const handleCopy = () => {
+    if (result === null) return;
+    navigator.clipboard.writeText(result.toString());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleClearHistory = () => {
+    setHistory([]);
+    safeStorage.set(STORAGE_KEY, []);
   };
 
   const handleReset = () => {
@@ -206,8 +222,20 @@ const OmikujiScreen: React.FC<OmikujiScreenProps> = ({ min, max, onBack, onReset
                   <span className="writing-vertical-rl">願望　叶う</span>
                   <span className="writing-vertical-rl">待人　来る</span>
                   <span className="writing-vertical-rl">商法　吉</span>
-                  <span className="writing-vertical-rl">学問　安心せよ</span>
+                  <span className="writing-vertical-rl">学문　安心せよ</span>
                 </div>
+
+                {step === "done" && (
+                   <motion.button
+                     initial={{ opacity: 0 }}
+                     animate={{ opacity: 1 }}
+                     onClick={handleCopy}
+                     className="mt-6 flex items-center gap-2 px-4 py-1.5 bg-red-900/5 hover:bg-red-900/10 border border-red-900/10 rounded-full text-[10px] font-bold text-red-900 transition-all"
+                   >
+                     {copied ? <CheckCircle2 className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
+                     {copied ? "복사완료!" : "번호 복사"}
+                   </motion.button>
+                )}
               </motion.div>
             )}
 
