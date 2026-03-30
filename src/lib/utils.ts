@@ -5,6 +5,30 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Safe local storage helper that handles Next.js SSR and potential browser errors.
+ */
+export const safeStorage = {
+  get: (key: string) => {
+    if (typeof window === "undefined") return null;
+    try {
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    } catch (e) {
+      console.error("Error reading from localStorage", e);
+      return null;
+    }
+  },
+  set: (key: string, value: any) => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.error("Error writing to localStorage", e);
+    }
+  }
+};
+
 const basicNumbers: Record<number, string> = {
   0: '零', 1: '一', 2: '二', 3: '三', 4: '四',
   5: '五', 6: '六', 7: '七', 8: '八', 9: '九',
